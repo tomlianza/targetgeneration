@@ -191,3 +191,17 @@ with open(csv_path, "w", newline="") as csv_file:
     for index, record in enumerate(rectangle_records, start=1):
         writer.writerow([index, *record])
 print(f"Saved to: {csv_path}")
+
+# === Measurement Guide: 20px-wide circles at each CSV center location ===
+measurement_guide = target.copy()
+circle_radius = 20  # 40px diameter
+with open(csv_path, newline="") as csv_file:
+    reader = csv.DictReader(csv_file)
+    for row in reader:
+        center = (int(row["horizontal"]), int(row["vertical"]))
+        cv2.circle(measurement_guide, center, circle_radius, (255, 255, 255), -1)
+        cv2.circle(measurement_guide, center, circle_radius, (0, 0, 0), 2)
+
+measurement_guide_path = os.path.join(os.getcwd(), "measurement guide.bmp")
+cv2.imwrite(measurement_guide_path, measurement_guide)
+print(f"Saved to: {measurement_guide_path}")
