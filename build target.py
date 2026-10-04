@@ -154,17 +154,14 @@ def draw_cross(x, y):
 # Offset from edges to stay within border
 offset = border_thickness // 4
 
-# Top-left
-draw_cross(0, offset + offset)
-
-# Top-right
-draw_cross(width - cross_length, offset + offset)
-
-# Bottom-left
-draw_cross(0, height - offset * 2)
-
-# Bottom-right
-draw_cross(width - cross_length, height - offset * 2)
+cross_positions = [
+    ("upper left", 0, offset * 2),
+    ("upper right", width - cross_length, offset * 2),
+    ("lower left", 0, height - offset * 2),
+    ("lower right", width - cross_length, height - offset * 2),
+]
+for _, x, y in cross_positions:
+    draw_cross(x, y)
 
 # === Save as BMP ===
 output_path = os.path.join(os.getcwd(), "uhd_targetRamps.bmp")
@@ -187,7 +184,9 @@ print(f"Saved to: {white_output_path}")
 csv_path = os.path.join(os.getcwd(), "uhd_targetRamps.csv")
 with open(csv_path, "w", newline="") as csv_file:
     writer = csv.writer(csv_file)
-    writer.writerow(["index", "horizontal", "vertical", "R", "G", "B"])
+    writer.writerow([len(rectangle_records), width, height])
+    for label, x, y in cross_positions:
+        writer.writerow([label, x + cross_length // 2, y])
     for index, record in enumerate(rectangle_records, start=1):
         writer.writerow([index, *record])
 print(f"Saved to: {csv_path}")
@@ -196,11 +195,21 @@ print(f"Saved to: {csv_path}")
 measurement_guide = target.copy()
 circle_radius = 20  # 40px diameter
 with open(csv_path, newline="") as csv_file:
-    reader = csv.DictReader(csv_file)
+    next(csv_file)
+    for _ in cross_positions:
+        next(csv_file)
+    reader = csv.DictReader(
+        csv_file,
+        fieldnames=["index", "horizontal", "vertical", "R", "G", "B"],
+    )
     for row in reader:
         center = (int(row["horizontal"]), int(row["vertical"]))
         cv2.circle(measurement_guide, center, circle_radius, (255, 255, 255), -1)
         cv2.circle(measurement_guide, center, circle_radius, (0, 0, 0), 2)
+
+for _, x, y in cross_positions:
+    center = (x + cross_length // 2, y)
+    cv2.circle(measurement_guide, center, circle_radius, (0, 0, 255), -1)
 
 measurement_guide_path = os.path.join(os.getcwd(), "measurement guide.bmp")
 cv2.imwrite(measurement_guide_path, measurement_guide)
